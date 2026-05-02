@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VigilBoard — micro:bit Alert System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+  <div class="noise"></div>
+  <div class="iridescent-orb orb-1"></div>
+  <div class="iridescent-orb orb-2"></div>
+  <div class="iridescent-orb orb-3"></div>
+  <div class="flash-overlay" id="flashOverlay"></div>
+
+  <div class="app">
+    <!-- SIDEBAR -->
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo" onclick="toggleSidebar()" title="Toggle sidebar">
+          <svg viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" stroke-width="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
+            <circle cx="15.5" cy="8.5" r="1.5" fill="currentColor"/>
+            <circle cx="8.5" cy="15.5" r="1.5" fill="currentColor"/>
+            <circle cx="15.5" cy="15.5" r="1.5" fill="currentColor"/>
+            <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+          </svg>
+        </div>
+        <div class="sidebar-brand">
+          <div class="sidebar-brand-name">Vigil<span>Board</span></div>
+          <div class="sidebar-brand-sub">MICRO:BIT ALERTS v1.2</div>
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-section-label">Monitor</div>
+        <div class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+            <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+          </svg>
+          <span class="nav-label">Dashboard</span>
+          <span class="nav-badge" id="navBadge" style="display:none"></span>
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-section-label">Connection</div>
+        <div class="nav-item" data-page="bluetooth" onclick="switchPage('bluetooth',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/>
+          </svg>
+          <span class="nav-label">Bluetooth</span>
+          <span class="bt-nav-dot" id="btNavDot"></span>
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-section-label">Sources</div>
+        <div class="nav-item" data-page="sources" onclick="switchPage('sources',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M4 4h16v12H7l-3 3z"/>
+          </svg>
+          <span class="nav-label">Sources</span>
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-section-label">Configure</div>
+        <div class="nav-item" data-page="settings" onclick="switchPage('settings',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          <span class="nav-label">Settings</span>
+        </div>
+      </div>
+
+      <div class="sidebar-bottom">
+        <div class="conn-indicator disconnected" id="connIndicator">
+          <div class="conn-dot"></div>
+          <div class="conn-info">
+            <span class="conn-label" id="connLabel">No Device</span>
+            <span class="conn-sublabel" id="connSublabel">Bluetooth inactive</span>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- MAIN -->
+    <div class="main" id="mainContent">
+      <!-- TOPBAR -->
+      <div class="topbar">
+        <div class="topbar-left">
+          <div class="topbar-title" id="pageTitle">Dashboard</div>
+          <div class="topbar-sub" id="pageSub">PHONE ALERTS → MICRO:BIT</div>
+        </div>
+        <div class="topbar-right">
+          <div class="status-pill" id="btChip">
+            <span class="pill-dot"></span>
+            <span id="btChipLabel">NO DEVICE</span>
+          </div>
+          <div class="status-pill online">
+            <span class="pill-dot"></span>
+            <span>ONLINE</span>
+          </div>
+          <div class="clock" id="clock">--:--:--</div>
+        </div>
+      </div>
+
+      <!-- CONTENT PAGES -->
+      <div class="content">
+
+        <!-- DASHBOARD -->
+        <div class="page active" id="page-dashboard">
+          <div class="stat-row">
+            <div class="stat-card sc">
+              <div class="stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value" id="totalAlerts">0</div>
+                <div class="stat-label">Events Today</div>
+              </div>
+              <div class="stat-glow glow-iris"></div>
+            </div>
+            <div class="stat-card sa">
+              <div class="stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value" id="unreadAlerts">0</div>
+                <div class="stat-label">Unread</div>
+              </div>
+              <div class="stat-glow glow-warm"></div>
+            </div>
+            <div class="stat-card sr">
+              <div class="stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/></svg>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value" id="critAlerts">0</div>
+                <div class="stat-label">BT Devices</div>
+              </div>
+              <div class="stat-glow glow-cool"></div>
+            </div>
+          </div>
+
+          <div class="g2">
+            <div class="glass-card">
+              <div class="card-hd">
+                <div class="card-title">Live Alert Feed</div>
+                <button class="ghost-btn" onclick="clearAlerts()">Clear All</button>
+              </div>
+              <div class="alert-list" id="alertList"></div>
+            </div>
+            <div class="col-stack">
+              <div class="glass-card">
+                <div class="card-hd">
+                  <div class="card-title">micro:bit Status</div>
+                  <button class="ghost-btn" onclick="testFlash()">Test Flash</button>
+                </div>
+                <div class="led-grid" id="ledMatrix"></div>
+              </div>
+              <div class="glass-card">
+                <div class="card-hd">
+                  <div class="card-title">Activity — Last Hour</div>
+                </div>
+                <div class="mini-chart" id="miniChart"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BLUETOOTH PAGE -->
+        <div class="page" id="page-bluetooth">
+          <!-- Reconnect banner -->
+          <div class="reconnect-banner" id="reconnectBanner" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+            <span>Device disconnected — <strong>Reconnecting…</strong></span>
+            <button class="ghost-btn-sm" onclick="btReconnect()">Retry Now</button>
+          </div>
+
+          <div class="g2">
+            <div class="col-stack">
+              <!-- BT Status Hero -->
+              <div class="bt-hero glass-card" id="btStatusCard">
+                <div class="bt-aura" id="btAura"></div>
+                <div class="bt-hero-icon" id="btIconWrap">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/></svg>
+                </div>
+                <div class="bt-hero-info">
+                  <div class="bt-state-title" id="btStateTitle">No Device Connected</div>
+                  <div class="bt-state-sub" id="btStateSub">Scan to find your micro:bit</div>
+                </div>
+                <div class="bt-hero-actions">
+                  <button class="primary-btn" id="btScanBtn" onclick="btScan()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    Scan for Devices
+                  </button>
+                  <button class="danger-btn" id="btDisconnectBtn" onclick="btDisconnect()" style="display:none">
+                    Disconnect
+                  </button>
+                </div>
+              </div>
+
+              <!-- Device List -->
+              <div class="glass-card">
+                <div class="card-hd">
+                  <div class="card-title">Available Devices</div>
+                </div>
+                <div class="bt-device-list" id="btDeviceList">
+                  <div class="empty-state">
+                    <div class="empty-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="24" height="24"><path d="M5.5 8.5 9 12l-3.5 3.5L2 12l3.5-3.5z"/><path d="m12 2 3.5 3.5-3.5 3.5L8.5 5.5 12 2z"/><path d="M18.5 8.5 22 12l-3.5 3.5L15 12l3.5-3.5z"/><path d="m12 15 3.5 3.5L12 22l-3.5-3.5L12 15z"/></svg>
+                    </div>
+                    <p>No devices found</p>
+                    <span>Click Scan to discover devices</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Connection Info -->
+              <div class="glass-card">
+                <div class="card-hd"><div class="card-title">Protocol Info</div></div>
+                <div class="kv-list">
+                  <div class="kv"><span>UART Service</span><span class="kv-val">6E400001-…</span></div>
+                  <div class="kv"><span>RX Char</span><span class="kv-val">6E400002-…</span></div>
+                  <div class="kv"><span>TX Char</span><span class="kv-val">6E400003-…</span></div>
+                  <div class="kv"><span>Format</span><span class="kv-val">TYPE:URG:SRC\n</span></div>
+                  <div class="kv"><span>Status</span><span class="kv-val" id="btInfoStatus" style="color:var(--red)">Disconnected</span></div>
+                  <div class="kv"><span>Auto-reconnect</span><span class="kv-val" id="btAutoReconnectStatus" style="color:var(--muted)">Standby</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-stack">
+              <!-- Command Grid -->
+              <div class="glass-card">
+                <div class="card-hd"><div class="card-title">Test Commands</div></div>
+                <div class="cmd-grid">
+                  <button class="cmd-btn" onclick="sendCmd('CALL:HIGH')">
+                    <div class="cmd-icon call-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    </div>
+                    <span>Call</span>
+                    <span class="cmd-tag high">HIGH</span>
+                  </button>
+                  <button class="cmd-btn" onclick="sendCmd('MSG:MED')">
+                    <div class="cmd-icon msg-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    </div>
+                    <span>Message</span>
+                    <span class="cmd-tag med">MED</span>
+                  </button>
+                  <button class="cmd-btn" onclick="sendCmd('EMAIL:LOW')">
+                    <div class="cmd-icon email-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    </div>
+                    <span>Email</span>
+                    <span class="cmd-tag low">LOW</span>
+                  </button>
+                  <button class="cmd-btn" onclick="sendCmd('NOTIF:LOW')">
+                    <div class="cmd-icon notif-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    </div>
+                    <span>Notif</span>
+                    <span class="cmd-tag low">LOW</span>
+                  </button>
+                  <button class="cmd-btn" onclick="sendCmd('TEST:ALL')">
+                    <div class="cmd-icon test-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span>Test LEDs</span>
+                    <span class="cmd-tag info">TEST</span>
+                  </button>
+                  <button class="cmd-btn" onclick="sendCmd('FIND:BIT')">
+                    <div class="cmd-icon find-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    </div>
+                    <span>Find Bit</span>
+                    <span class="cmd-tag info">PING</span>
+                  </button>
+                </div>
+                <div class="cmd-note" id="btCmdNote">Connect a device to send commands. Demo mode available.</div>
+              </div>
+
+              <!-- Serial Log -->
+              <div class="glass-card">
+                <div class="card-hd">
+                  <div class="card-title">Serial Log</div>
+                  <button class="ghost-btn" onclick="clearLog()">Clear</button>
+                </div>
+                <div class="bt-log" id="btLog">
+                  <div class="log-line info"><span class="log-time">--:--:--</span>VigilBoard ready. Waiting for connection…</div>
+                </div>
+              </div>
+
+              <!-- Custom Command -->
+              <div class="glass-card">
+                <div class="card-hd"><div class="card-title">Custom Command</div></div>
+                <div class="custom-cmd-row">
+                  <input class="text-input" id="customCmd" placeholder="CALL:HIGH:PHONE" />
+                  <button class="primary-btn" onclick="sendCustomCmd()">Send</button>
+                </div>
+                <div class="hint-text">Format: TYPE:URGENCY:SOURCE — e.g. EMAIL:LOW:GMAIL</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SOURCES PAGE -->
+        <div class="page" id="page-sources">
+          <div class="g2">
+            <div class="glass-card">
+              <div class="card-hd">
+                <div class="card-title">Gmail Connection</div>
+              </div>
+              <div class="gmail-connect-area">
+                <div class="gmail-logo-wrap">
+                  <svg viewBox="0 0 48 48" width="36" height="36">
+                    <path fill="#EA4335" d="M24 20.8l-11.4-8.4h22.8L24 20.8z"/>
+                    <path fill="#FBBC05" d="M12.6 12.4L8 15.4V36h4.6V12.4z"/>
+                    <path fill="#34A853" d="M35.4 12.4V36H40V15.4l-4.6-3z"/>
+                    <path fill="#4285F4" d="M12.6 36h22.8V20.8L24 28.8l-11.4-8V36z"/>
+                  </svg>
+                </div>
+                <div class="gmail-connect-info">
+                  <div class="gmail-status-text" id="gmailStatus">Not connected</div>
+                  <div class="gmail-email" id="connectedEmail">—</div>
+                </div>
+              </div>
+              <div class="gmail-actions">
+                <button class="primary-btn" id="googleSignInBtn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                  Sign in with Google
+                </button>
+                <button class="danger-btn" id="googleSignOutBtn" style="display:none">Disconnect Gmail</button>
+              </div>
+            </div>
+
+            <div class="glass-card">
+              <div class="card-hd">
+                <div class="card-title">Live Gmail Feed</div>
+                <div style="display:flex;gap:6px;">
+                  <button class="ghost-btn" onclick="fetchGmail()">Refresh</button>
+                  <button class="ghost-btn" onclick="clearGmailFeed()">Clear</button>
+                </div>
+              </div>
+              <div id="gmailFeed" class="alert-list">
+                <div class="empty-state">
+                  <div class="empty-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="24" height="24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                  </div>
+                  <p>No emails loaded</p>
+                  <span>Sign in to load your inbox</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SETTINGS PAGE -->
+        <div class="page" id="page-settings">
+          <div class="g2">
+            <div class="glass-card">
+              <div class="set-group-title">Alert Behaviour</div>
+              <div class="set-row">
+                <div class="set-icon-wrap call-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                </div>
+                <div class="set-info">
+                  <div class="set-name">Incoming Calls</div>
+                  <div class="set-desc">Flash — High urgency</div>
+                </div>
+                <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+              </div>
+              <div class="set-row">
+                <div class="set-icon-wrap msg-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <div class="set-info">
+                  <div class="set-name">Messages</div>
+                  <div class="set-desc">Flash — Medium urgency</div>
+                </div>
+                <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+              </div>
+              <div class="set-row">
+                <div class="set-icon-wrap email-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                </div>
+                <div class="set-info">
+                  <div class="set-name">Email</div>
+                  <div class="set-desc">Flash — Low urgency</div>
+                </div>
+                <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+              </div>
+              <div class="set-row">
+                <div class="set-icon-wrap notif-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                </div>
+                <div class="set-info">
+                  <div class="set-name">Notifications</div>
+                  <div class="set-desc">Flash — Low urgency</div>
+                </div>
+                <div class="toggle" onclick="this.classList.toggle('on')"></div>
+              </div>
+            </div>
+
+            <div class="col-stack">
+              <div class="glass-card">
+                <div class="set-group-title">Device</div>
+                <div class="set-row">
+                  <div class="set-icon-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/></svg>
+                  </div>
+                  <div class="set-info">
+                    <div class="set-name">Bluetooth Device</div>
+                    <div class="set-desc" id="settingsBtStatus">No device connected</div>
+                  </div>
+                  <button class="ghost-btn-sm" onclick="switchPage('bluetooth',document.querySelector('[data-page=bluetooth]'))">Configure</button>
+                </div>
+                <div class="set-row" style="border-bottom:none">
+                  <div class="set-icon-wrap" style="background:rgba(255,71,87,0.08);border-color:rgba(255,71,87,0.15)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="1.8" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                  </div>
+                  <div class="set-info">
+                    <div class="set-name">Reset All Settings</div>
+                    <div class="set-desc">Restore to defaults</div>
+                  </div>
+                  <button class="danger-btn-sm" onclick="resetSettings()">Reset</button>
+                </div>
+              </div>
+
+              <div class="glass-card">
+                <div class="set-group-title">About</div>
+                <div class="kv-list">
+                  <div class="kv"><span>Version</span><span class="kv-val">v1.2.0</span></div>
+                  <div class="kv"><span>Protocol</span><span class="kv-val">NUS UART BLE</span></div>
+                  <div class="kv"><span>Build</span><span class="kv-val">2025-production</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end .content -->
+    </div><!-- end .main -->
+  </div><!-- end .app -->
+
+  <!-- MODAL -->
+  <div class="modal-overlay" id="alertModal" onclick="modalClose(event)">
+    <div class="modal glass-card">
+      <div class="modal-hd">
+        <div class="modal-icon-wrap" id="mIconWrap">
+          <span id="mIcon">🔔</span>
+        </div>
+        <div>
+          <div class="modal-title" id="mTitle">Alert</div>
+          <div class="modal-sub" id="mSub">—</div>
+        </div>
+        <button class="modal-close" onclick="modalClose()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="mBody"></div>
+      <div class="modal-ft">
+        <button class="ghost-btn" onclick="modalClose()">Dismiss</button>
+        <button class="primary-btn" onclick="modalAck()">Acknowledge</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
